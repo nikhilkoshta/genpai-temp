@@ -1,41 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-
-interface Items {
-    id : string,
-    name : string
-}
-
-let items: Items[] = [];
+import { PrismaClient } from "@prisma/client";
+const client = new PrismaClient();
 
 export async function GET(req:NextRequest) {
-    return NextResponse.json(items, {status: 200});
+    const user = await client.user.findMany({});
+
+    return NextResponse.json(user, { status: 200 });
 }
 
 
 export async function POST(req:NextRequest) {
-    const newItem: Items = await req.json();
+    const newUser = await req.json();
 
-    items.push(newItem);
+    const createdUser = await client.user.create({
+        data: {
+            name: newUser.name,
+        },
+    });
 
-    return NextResponse.json(newItem, {status: 201});
+    return NextResponse.json(createdUser, { status: 201 });
 
 }
 
 export async function PUT(req:NextRequest) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    const updatedItem: Items = await req.json();
+    const updatedUser = await req.json();
 
-    items = items.map(item => item.id === id? updatedItem : item);
+    const user = await client.user.update({
+        where: { id: Number(id) },
+        data: { name: updatedUser.name },
+    })
 
-    return NextResponse.json(updatedItem, {status: 200});
+    return NextResponse.json(user, { status: 200 });
 }
 
 export async function DELETE(req:NextRequest) {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
 
-    items = items.filter(item => item.id !== id);
+    await client.user.delete({
+        where: { id: Number(id) },
+    });
 
     return NextResponse.json(null, {status: 204});
 
